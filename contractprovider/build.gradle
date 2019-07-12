@@ -1,0 +1,82 @@
+import org.springframework.cloud.contract.verifier.config.TestFramework
+import org.springframework.cloud.contract.verifier.config.TestMode
+
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:2.1.6.RELEASE"
+        classpath 'org.springframework.cloud:spring-cloud-contract-gradle-plugin:2.1.2.RELEASE'
+        classpath "com.jayway.restassured:rest-assured:2.5.0"
+        classpath "com.jayway.restassured:spring-mock-mvc:2.5.0"
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version '2.1.6.RELEASE'
+    id 'java'
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'groovy'
+apply plugin: 'spring-cloud-contract'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.star'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+ext {
+    set('springCloudVersion', "Greenwich.SR2")
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    compile 'org.springframework:spring-web:5.1.7.RELEASE'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.cloud:spring-cloud-starter-contract-verifier'
+    testCompile "com.jayway.restassured:rest-assured:2.5.0"
+    testCompile "com.jayway.restassured:spring-mock-mvc:2.5.0"
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        mavenBom "org.springframework.cloud:spring-cloud-contract-dependencies:2.1.2.RELEASE"
+    }
+}
+
+contracts {
+    testMode = TestMode.MOCKMVC
+    packageWithBaseClasses = 'base'
+    testFramework = TestFramework.JUNIT5
+    contractsDslDir = project.file("${projectDir}/src/test/resources/contracts")
+    stubsOutputDir = file("${project.buildDir}/production/${project.name}-stubs/")
+}
+
+publishing {
+    publications {
+        stubs(MavenPublication) {
+            artifactId "${project.name}-stubs"
+            artifact verifierStubsJar
+        }
+    }
+}
